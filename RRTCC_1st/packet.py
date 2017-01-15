@@ -14,7 +14,7 @@ class RTCP:
         self.source_address = source_add
         self.dest_address = dest_add
         self.type = pk_type
-        self.timestamp = 0
+        self.timestamp = timestamp
         
         #for sender report and receiver report
         self.fraction_lost = 0
