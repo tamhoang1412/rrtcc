@@ -1,7 +1,7 @@
 import json
 import matplotlib.pyplot as plt
 
-f = open('D:\log1000.txt', 'r')
+f = open('D:\logA.txt', 'r')
 logRaw = f.read()
 f.close()
 

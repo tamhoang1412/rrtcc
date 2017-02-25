@@ -113,6 +113,7 @@ class application:
                 self.received_pk_list.append((0, 0))
             rtcp_packet = pk.RTCP(self.address, dest_address, report_type, env.now)
             rtcp_packet.fb_sq_num = fb_sq_num
+            fb_sq_num += 1
             rtcp_packet.sq_num_vector, rtcp_packet.base_transport_sq_num = self.get_sq_num_vector_and_base_transport_sq_num()
             try:
                 env.process(network_fwd(env, rtcp_packet, dest_address))
@@ -120,7 +121,9 @@ class application:
                 print 'Stop RTCP process'
                 return
 
-
+    '''++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'''
+    
+    
     def get_sq_num_vector_and_base_transport_sq_num(self):
         base_transport_sq_num = self.last_pk_reported + 1
         sq_num_vector = []
@@ -180,6 +183,7 @@ class application:
                         print err
         return
 
+    '''++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'''
 
     def adjust_RTP_sending_rate(self, env, RTCP_packet):        
         As = self.lossbased_control_estimated_bandwidth(env, RTCP_packet.timestamp)
@@ -194,6 +198,8 @@ class application:
         print 'RTP interval:' + str(self.RTP_interval)
         self.last_time_update_estimated_bandwidth = env.now
         return
+
+    '''++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'''
 
 
     def lossbased_control_estimated_bandwidth(self, env, rtcp_timestamp):
@@ -216,12 +222,12 @@ class application:
             As = last_As * 1.05 + 1000
         return As
 
+    '''++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'''
 
     def delaybased_control_estimated_bandwidth(self, env, rtcp_timestamp):
         self.update_gamma_1()
         self.update_state()
         R = self.compute_incoming_bitrate()
-        print 'R: ' + str(R) 
         self.R_arr.append(R)
         last_Ar = self.Ar_arr[-1][0]
         Ar = last_Ar
@@ -245,13 +251,12 @@ class application:
         elif self.state == 'D':
             Ar = 0.85 * R
         else:
-            '''
-            Hold state, do nothing
-            '''
+            '''Hold state, do nothing'''
         self.Ar_arr.append((Ar, env.now))
         return Ar
 
-
+    '''++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'''
+    
     def update_gamma_1(self):
         i = self.last_received_RTP
         if abs(self.m[i]) - self.gamma_1[-1] < 15:
@@ -260,7 +265,8 @@ class application:
             else:
                 self.gamma_1.append(self.gamma_1[-1] + (self.packets_info[i][2]-self.packets_info[i-1][2]) * self.K_u * (abs(self.m[i])-self.gamma_1[-1]))
         return
-    
+        
+    '''++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'''
 
     def update_state(self):
         signal = self.get_signal()
@@ -290,17 +296,21 @@ class application:
                 self.state = 'H'
         return
 
-
+    '''++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'''
+    
     def get_signal(self):
         i = self.last_received_RTP
         if self.m[i] < self.m[i-1]:
             signal = 'U'
         elif self.m[i] > self.gamma_1[-1] or self.m[i] > self.gamma_2:
             signal = 'O'
+        elif self.m[i] <  -self.gamma_1[-1]:
+            signal = 'U'
         else:
             signal = 'N'
         return signal
 
+    '''++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'''
 
     def get_increase_state(self):
         alpha = 0.95
@@ -333,6 +343,7 @@ class application:
             R = (self.RTP_packet_size * N) / float(self.T)
         return R
 
+    '''++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'''
 
     def update_packets_info(self, rtcp_pk):
         i = 0
@@ -358,7 +369,8 @@ class application:
                 self.m[index] = np.array(filtered_state_means[index])[0]
         return
 
-
+    '''++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'''
+    
 '''=========================================================================='''
 
 class manager:
