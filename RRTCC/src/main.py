@@ -18,9 +18,11 @@ receiver_address = 'B'
 receiver = RTPAplication(receiver_address)
 manager.add_node(receiver)
 
-sender.connect(receiver.address)
+sender.add_dest_address(receiver.address)
+sender.connect(manager)
+receiver.connect(manager)
 #env.process(sender.send_RTP(env, receiver.address, network))
-sender.start(env, manager)
+sender.start(env)
 
 env.run(SIM_TIME)
 

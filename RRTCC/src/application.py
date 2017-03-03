@@ -17,9 +17,10 @@ class RTPAplication:
         self.dest_address = None
         self.manager = None
         self.network = None
+        self.env = None
 
         self.in_RTP_session = False
-        self.RTP_packets_num = 100
+        self.RTP_packets_num = 30
         self.last_sent_RTP = 0
         self.last_received_RTP = 0
         self.RTP_packet_size = 1200 * 30 * 8 # bits
@@ -49,66 +50,49 @@ class RTPAplication:
 
     '''++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'''
 
-    def connect(self, dest_add):
+    def add_dest_address(self, dest_add):
         self.dest_address = dest_add
 
 
-    def start(self, env, manager):
+    def connect(self, manager):
         self.manager = manager
         self.network = manager.network
-        env.process(self.main_func(env))
+
+    def start(self, env):
+        self.env = env
+        env.process(self.main_func())
         return
 
 
-
-
-    def main_func(self, env):
+    def main_func(self):
         sq_num = 0
         while sq_num < self.RTP_packets_num:
             '''Get an RTP packet from a data generator'''
-            RTP_packet = self.data_generator.gen_RTP_packet(self.dest_address, sq_num, env.now)
+            RTP_packet = self.data_generator.gen_RTP_packet(self.dest_address, sq_num, self.env.now)
 
             '''Update state variables of RTP engine'''
             self.last_sent_RTP = sq_num
-            self.packets_info[sq_num][1] = env.now
+            self.packets_info[sq_num][1] = self.env.now
 
             '''Send this RTP packet to network'''
-            self.do_send_RTP_packet(env, RTP_packet)
+            self.do_send_packet(self.env, RTP_packet)
 
             '''Wait timeout until send the next one'''
             print ("timeout " + str(self.RTP_interval))
-            yield env.timeout(self.RTP_interval)
+            yield self.env.timeout(self.RTP_interval)
             sq_num += 1
-        yield env.timeout(3)
-        print ("end")
-        RTCP_packet = pk.RTCP(self.address, self.dest_address, 'BYE', env.now)
-        env.process(self.network.fwd(env, RTCP_packet))
+        yield self.env.timeout(3)
+        RTCP_packet = pk.RTCP(self.address, self.dest_address, 'BYE', self.env.now)
+        self.do_send_packet(self.env, RTCP_packet)
 
 
-    def do_send_RTP_packet(self, env, RTP_packet):
-        env.process(self.network.fwd(env, RTP_packet))
-
-
-    def send_RTP(self, env, dest_add, network):
-        sq_num = 0
-        while sq_num < self.RTP_packets_num:
-            RTP_packet = self.data_generator.gen_RTP_packet(dest_add, sq_num, env.now)
-            env.process(network.fwd(env, RTP_packet))
-            self.last_sent_RTP = sq_num
-            self.packets_info[sq_num][1] = env.now
-            print ("timeout " + str(self.RTP_interval))
-            yield env.timeout(self.RTP_interval)
-            sq_num += 1
-            print (sq_num)
-        yield env.timeout(3)
-        print ("end")
-        RTCP_packet = pk.RTCP(self.address, dest_add, 'BYE', env.now)
-        env.process(network.fwd(env, RTCP_packet))
+    def do_send_packet(self, env, packet):
+        env.process(self.network.fwd(env, packet))
 
     '''++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'''
 
 
-    def send_RTCP(self, env, dest_address, report_type, network):
+    def RTCP_report_process(self, env, dest_address, report_type):
         fb_sq_num = 0
         while True:
             try:
@@ -122,7 +106,7 @@ class RTPAplication:
             rtcp_packet.fb_sq_num = fb_sq_num
             rtcp_packet.sq_num_vector, rtcp_packet.base_transport_sq_num = self.get_sq_num_vector_and_base_transport_sq_num(env)
             try:
-                env.process(network.fwd(env, rtcp_packet))
+                self.do_send_packet(env, rtcp_packet)
             except simpy.Interrupt:
                 print 'Stop RTCP process'
                 return
@@ -144,13 +128,12 @@ class RTPAplication:
 
     '''++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'''
 
-
-    def recv(self, env, packet, network):
+    def recv(self, env, packet):
         '''if packet is RTP'''
         if isinstance(packet, pk.RTP):
             if not self.in_RTP_session:
                 self.in_RTP_session = True
-                self.RTCP_process = env.process(self.send_RTCP(env, packet.source_address, 'RR', network))
+                self.RTCP_process = env.process(self.RTCP_report_process(env, packet.source_address, 'RR'))
                 yield env.timeout(TIME_TO_START_RTCP_PROCESS)
             x = self.address + " received " + str(packet.sq_num) + " time:" + str(env.now)
             print x

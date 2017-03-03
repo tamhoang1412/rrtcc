@@ -23,6 +23,6 @@ class Network:
             return
         dest = self.manager.get_element_by_address(packet.dest_address)
         yield env.timeout(self.get_delay())
-        env.process(dest.recv(env, packet, self))
+        env.process(dest.recv(env, packet))
 
 '''=========================================================================='''

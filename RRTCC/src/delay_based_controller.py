@@ -28,7 +28,6 @@ class DelayBasedController:
         self.new_del_var_th(last_received_RTP, last_m, last_del_var_th, last_arr_time, second_last_arr_time)
         self.state = self.update_state(self.state, last_del_var_th, last_m, second_last_m)
         R = self.compute_incoming_bitrate(last_received_RTP, RTCP_limit, packets_info, RTP_packet_size)
-        self.R_arr.append(R)
         last_Ar = self.Ar_arr[-1][0]
         Ar = last_Ar
         if self.state == 'I':
@@ -109,14 +108,7 @@ class DelayBasedController:
 
 
     def get_increase_state(self):
-        alpha = 0.95
         R = self.R_arr[-1]
-        if len(self.R_arr) < 2:
-            self.R_deviation.append(0)
-            self.R_mean.append(self.R_arr[0])
-        else:
-            self.R_mean.append((1 - alpha) * self.R_mean[-1] + alpha * R)
-            self.R_deviation.append((1 - alpha) * (self.R_mean[-1] + alpha * (R - self.R_mean[-2])))
         mean = self.R_mean[-1]
         deviation = self.R_deviation[-1]
         if (abs(mean - R) < 3 * deviation):
@@ -137,6 +129,13 @@ class DelayBasedController:
             R = 999999
         else:
             R = (RTP_packet_size * N) / float(self.T)
+        self.R_arr.append(R)
+        if len(self.R_arr) < 2:
+            self.R_deviation.append(0)
+            self.R_mean.append(self.R_arr[0])
+        else:
+            self.R_mean.append((1 - self.alpha) * self.R_mean[-1] + self.alpha * R)
+            self.R_deviation.append((1 - self.alpha) * (self.R_mean[-1] + self.alpha * (R - self.R_mean[-2])))
         return R
 
 
