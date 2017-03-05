@@ -15,12 +15,9 @@ class RTPAplication:
     def __init__(self, address):
         self.address = address
         self.dest_address = None
-        self.manager = None
-        self.network = None
-        self.env = None
 
         self.in_RTP_session = False
-        self.RTP_packets_num = 30
+        self.RTP_packets_num = 50
         self.last_sent_RTP = 0
         self.last_received_RTP = 0
         self.RTP_packet_size = 1200 * 30 * 8 # bits
@@ -48,6 +45,11 @@ class RTPAplication:
         self.gcc_controller = GccController(self.current_bandwidth)
         self.data_generator = MultimediaDataGenerator(self.address)
 
+        '''Exception'''
+        self.manager = None
+        self.network = None
+        self.env = None
+
     '''++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'''
 
     def add_dest_address(self, dest_add):
@@ -60,11 +62,11 @@ class RTPAplication:
 
     def start(self, env):
         self.env = env
-        env.process(self.main_func())
+        env.process(self.send_process())
         return
 
 
-    def main_func(self):
+    def send_process(self):
         sq_num = 0
         while sq_num < self.RTP_packets_num:
             '''Get an RTP packet from a data generator'''
@@ -74,45 +76,44 @@ class RTPAplication:
             self.last_sent_RTP = sq_num
             self.packets_info[sq_num][1] = self.env.now
 
-            '''Send this RTP packet to network'''
-            self.do_send_packet(self.env, RTP_packet)
+            '''Sendf this RTP packet to network'''
+            self.do_send_packet(RTP_packet)
 
             '''Wait timeout until send the next one'''
-            print ("timeout " + str(self.RTP_interval))
             yield self.env.timeout(self.RTP_interval)
             sq_num += 1
         yield self.env.timeout(3)
         RTCP_packet = pk.RTCP(self.address, self.dest_address, 'BYE', self.env.now)
-        self.do_send_packet(self.env, RTCP_packet)
+        self.do_send_packet(RTCP_packet)
 
 
-    def do_send_packet(self, env, packet):
-        env.process(self.network.fwd(env, packet))
+    def do_send_packet(self, packet):
+        self.env.process(self.network.fwd(self.env, packet))
 
     '''++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'''
 
 
-    def RTCP_report_process(self, env, dest_address, report_type):
+    def RTCP_report_process(self, dest_address, report_type):
         fb_sq_num = 0
         while True:
             try:
-                yield env.timeout(self.RTCP_interval)
+                yield self.env.timeout(self.RTCP_interval)
             except simpy.Interrupt:
                 print 'Stop RTCP process'
                 return
             for i in range (0, self.RTCP_limit):
                 self.received_pk_list.append((0, 0))
-            rtcp_packet = pk.RTCP(self.address, dest_address, report_type, env.now)
+            rtcp_packet = pk.RTCP(self.address, dest_address, report_type, self.env.now)
             rtcp_packet.fb_sq_num = fb_sq_num
-            rtcp_packet.sq_num_vector, rtcp_packet.base_transport_sq_num = self.get_sq_num_vector_and_base_transport_sq_num(env)
+            rtcp_packet.sq_num_vector, rtcp_packet.base_transport_sq_num = self.get_sq_num_vector_and_base_transport_sq_num()
             try:
-                self.do_send_packet(env, rtcp_packet)
+                self.do_send_packet(rtcp_packet)
             except simpy.Interrupt:
                 print 'Stop RTCP process'
                 return
 
 
-    def get_sq_num_vector_and_base_transport_sq_num(self, env):
+    def get_sq_num_vector_and_base_transport_sq_num(self):
         base_transport_sq_num = self.last_pk_reported + 1
         sq_num_vector = []
         for i in range (self.last_pk_reported + 1, self.last_received_RTP):
@@ -123,17 +124,18 @@ class RTPAplication:
         for i in range (base_transport_sq_num, self.last_received_RTP + 1):
             sq_num_vector.append(self.received_pk_list[i])
         self.last_pk_reported = self.last_received_RTP
-        self.last_RTCP_sent_time = env.now
+        self.last_RTCP_sent_time = self.env.now
         return (sq_num_vector, base_transport_sq_num)
 
     '''++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'''
 
-    def recv(self, env, packet):
+    def receive_process(self, env, packet):
+        self.env = env
         '''if packet is RTP'''
         if isinstance(packet, pk.RTP):
             if not self.in_RTP_session:
                 self.in_RTP_session = True
-                self.RTCP_process = env.process(self.RTCP_report_process(env, packet.source_address, 'RR'))
+                self.RTCP_process = env.process(self.RTCP_report_process(packet.source_address, 'RR'))
                 yield env.timeout(TIME_TO_START_RTCP_PROCESS)
             x = self.address + " received " + str(packet.sq_num) + " time:" + str(env.now)
             print x
