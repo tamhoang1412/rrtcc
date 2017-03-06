@@ -98,7 +98,7 @@ class DelayBasedController:
         #last_m, second_last_m = m[self.last_received_RTP], m[self.last_received_RTP - 1]
         if last_m < second_last_m:
             signal = 'U'
-        elif last_m > last_del_var_th or last_m > self.overuse_time_th:
+        elif last_m > last_del_var_th:
             signal = 'O'
         elif last_m <  -last_del_var_th:
             signal = 'U'

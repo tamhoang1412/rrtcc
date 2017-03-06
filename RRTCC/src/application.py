@@ -1,6 +1,4 @@
 import simpy, random
-from pykalman import KalmanFilter
-import numpy as np
 
 import packet as pk
 from congestion_controller import GccController
@@ -29,20 +27,9 @@ class RTPAplication:
         self.RTCP_interval = 5
         self.RTCP_limit = 30
         self.RTCP_process = None
-        self.packets_info = [[0, 0, 0] for i in range(0, self.RTP_packets_num)]
-        ''' (a, b, c)
-            a: status: 1 for arriving on time, 2 for late, 0 for missing
-            b: sent time
-            c: received time
-        '''
+
         self.received_pk_list = [(0, 0) for i in range(0, self.RTCP_limit * 2)]
-        self.d = [0 for i in range(0, self.RTP_packets_num)]
-        #self.dL = [0 for i in range(0, self.RTP_packets_num)]
-        #self.C = [0 for i in range(0, self.RTP_packets_num)]
-        self.m = [0 for i in range(0, self.RTP_packets_num)]
-        #self.v = [0 for i in range(0, self.RTP_packets_num)]
-        
-        self.gcc_controller = GccController(self.current_bandwidth)
+        self.gcc_controller = GccController(self.current_bandwidth, self.RTP_packets_num)
         self.data_generator = MultimediaDataGenerator(self.address)
 
         '''Exception'''
@@ -71,14 +58,11 @@ class RTPAplication:
         while sq_num < self.RTP_packets_num:
             '''Get an RTP packet from a data generator'''
             RTP_packet = self.data_generator.gen_RTP_packet(self.dest_address, sq_num, self.env.now)
-
             '''Update state variables of RTP engine'''
             self.last_sent_RTP = sq_num
-            self.packets_info[sq_num][1] = self.env.now
-
-            '''Sendf this RTP packet to network'''
+            self.gcc_controller.packets_info[sq_num][1] = self.env.now
+            '''Send this RTP packet to network'''
             self.do_send_packet(RTP_packet)
-
             '''Wait timeout until send the next one'''
             yield self.env.timeout(self.RTP_interval)
             sq_num += 1
@@ -91,7 +75,6 @@ class RTPAplication:
         self.env.process(self.network.fwd(self.env, packet))
 
     '''++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++'''
-
 
     def RTCP_report_process(self, dest_address, report_type):
         fb_sq_num = 0
@@ -152,14 +135,14 @@ class RTPAplication:
             print packet.base_transport_sq_num
             print repr(packet.sq_num_vector)
             if packet.type == 'SR':
-                self.update_packets_info(packet)
-                self.RTP_sending_rate, self.current_bandwidth = self.gcc_controller.adjust_RTP_sending_rate(env, packet, self.packets_info, self.m, self.last_received_RTP, self.RTCP_limit, self.RTP_packet_size, self.RTP_interval, self.last_received_RTP)
+                self.gcc_controller.update_packets_info(packet)
+                self.RTP_sending_rate, self.current_bandwidth = self.gcc_controller.adjust_RTP_sending_rate(env, packet, self.last_received_RTP, self.RTCP_limit, self.RTP_packet_size, self.RTP_interval, self.last_received_RTP)
                 print ("RTP sending rate " + str(self.RTP_sending_rate))
                 self.RTP_interval = 1 / (self.RTP_sending_rate / self.RTP_packet_size)
                 return
             elif packet.type == 'RR':
-                self.update_packets_info(packet)
-                self.RTP_sending_rate, self.current_bandwidth = self.gcc_controller.adjust_RTP_sending_rate(env, packet, self.packets_info, self.m, self.last_received_RTP, self.RTCP_limit, self.RTP_packet_size, self.RTP_interval, self.last_received_RTP)
+                self.gcc_controller.update_packets_info(packet)
+                self.RTP_sending_rate, self.current_bandwidth = self.gcc_controller.adjust_RTP_sending_rate(env, packet, self.last_received_RTP, self.RTCP_limit, self.RTP_packet_size, self.RTP_interval, self.last_received_RTP)
                 print ("RTP sending rate " + str(self.RTP_sending_rate))
                 self.RTP_interval = 1 / (self.RTP_sending_rate / self.RTP_packet_size)
                 return
@@ -171,29 +154,7 @@ class RTPAplication:
                         print err
         return
 
-    def update_packets_info(self, rtcp_pk):
-        i = 0
-        base_sq = rtcp_pk.base_transport_sq_num
-        for info in rtcp_pk.sq_num_vector:
-            index = base_sq + i
-            if info[1] != 0:
-                self.packets_info[index][0], self.packets_info[index][2] = info
-            else:
-                self.packets_info[index][0] = info[0]
-            i += 1
-            if index > 0:
-                if (self.packets_info[index][2] == 0) or (self.packets_info[index-1][2] == 0):
-                    self.d[index] = self.d[index - 1]
-                else:
-                    self.d[index] = (self.packets_info[index][2]-self.packets_info[index-1][2]) - (self.packets_info[index][1]-self.packets_info[index-1][1])
-            self.last_received_RTP = index
-            if index > 0:
-                kf = KalmanFilter(transition_matrices = [1], observation_matrices = [1])
-                measurements = np.asarray([self.d[j] for j in range (0, self.last_received_RTP + 1)])
-                kf = kf.em(measurements, n_iter=20)
-                (filtered_state_means, filtered_state_covariances) = kf.filter(measurements)
-                self.m[index] = np.array(filtered_state_means[index])[0]
-        return
+
 
 '''=========================================================================='''
 
