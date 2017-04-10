@@ -3,7 +3,46 @@ from manager import Manager
 from application import RTPAplication
 import os, json
 
-SIM_TIME = 2000
+
+'''=========================================================================='''
+def log_data():
+    print ("log data.")
+    version = "19"
+    filename = "D:/SimulationResults/log_" + version +".txt"
+    fo = open(filename, "wb")
+    x = {
+        'A_arr': sender.gcc_controller.A_arr,
+        'Ar_arr': sender.gcc_controller.db_controller.Ar_arr,
+        'As_arr': sender.gcc_controller.lb_controller.As_arr,
+        'lost_ratio': sender.gcc_controller.lb_controller.lost_ratio,
+        'R': sender.gcc_controller.db_controller.R_arr,
+        'm': sender.gcc_controller.m,
+        'del_val_th': sender.gcc_controller.db_controller.del_var_th
+    }
+    fo.write(json.dumps(x))
+    fo.close()
+    filename = "D:/SimulationResults/log_" + version + "_para.txt"
+    fo = open(filename, "wb")
+    x = {
+        'RTP_packets_num': sender.RTP_packets_num,
+        'Initial_RTP_interval': sender.initial_RTP_interval,
+        'T': sender.gcc_controller.db_controller.T,
+        'RTCP_interval': sender.RTCP_interval,
+        'RTCP_limit': sender.RTCP_limit,
+        'LOSS_THRESHOLD': manager.network.LOSS_THRESHOLD,
+        'DELAY_MEAN': manager.network.NETWORK_NOISE_MEAN,
+        'DELAY_VARIANCE': manager.network.NETWORK_NOISE_DEVIATION,
+        'HOLD_TIME': sender.gcc_controller.db_controller.HOLD_TIME,
+        'Rate_bandwidth_relation': sender.gcc_controller.rate_bandwidth_relation,
+        'alpha': sender.gcc_controller.db_controller.alpha,
+        'boundAs': "Yes"
+    }
+    fo.write(json.dumps(x))
+    fo.close()
+
+'''=========================================================================='''
+
+SIM_TIME = 1500
 
 env = simpy.Environment()
 manager = Manager()
@@ -25,19 +64,4 @@ receiver.connect(manager)
 sender.start(env)
 
 env.run(SIM_TIME)
-
-'''=========================================================================='''
-def log_data():
-    os.remove("D:/log.txt")
-    fo = open("D:/log.txt", "wb")
-    x = {
-        'packets_info': sender.packets_info,
-        'A_arr': sender.gcc_controller.A_arr,
-        'Ar_arr': sender.gcc_controller.db_controller.Ar_arr,
-        'As_arr': sender.gcc_controller.lb_controller.As_arr,
-        'lost_ratio': sender.gcc_controller.lb_controller.lost_ratio,
-        'jitter': sender.d
-    }
-    fo.write(json.dumps(x))
-    fo.close()
-
+log_data()

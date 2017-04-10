@@ -1,25 +1,24 @@
-import simpy, random
+import simpy
 
 import packet as pk
 from congestion_controller import GccController
 from data_generator import MultimediaDataGenerator
-    
-RANDOM_SEED = 40
-MAXIMUM_DELAY = 0.011
-TIME_TO_START_RTCP_PROCESS = 0.0001
-random.seed(RANDOM_SEED)
 
 class RTPAplication:
     def __init__(self, address):
+        self.MAXIMUM_DELAY = 0.011
+        self.TIME_TO_START_RTCP_PROCESS = 0.0001
+
         self.address = address
         self.dest_address = None
 
         self.in_RTP_session = False
-        self.RTP_packets_num = 50
+        self.RTP_packets_num = 500
         self.last_sent_RTP = 0
         self.last_received_RTP = 0
         self.RTP_packet_size = 1200 * 30 * 8 # bits
-        self.RTP_interval = 0.5 # 1 packet per RTP_interval
+        self.initial_RTP_interval = 0.5
+        self.RTP_interval = self.initial_RTP_interval # 1 packet per RTP_interval
         self.RTP_sending_rate = self.RTP_packet_size  / self.RTP_interval # bit/s
         self.current_bandwidth = self.RTP_packet_size / self.RTP_interval # bit/s (initial estimated bandwidth)S
         self.last_RTCP_sent_time = 0
@@ -32,7 +31,7 @@ class RTPAplication:
         self.gcc_controller = GccController(self.current_bandwidth, self.RTP_packets_num)
         self.data_generator = MultimediaDataGenerator(self.address)
 
-        '''Exception'''
+        '''Exceptions'''
         self.manager = None
         self.network = None
         self.env = None
@@ -54,6 +53,7 @@ class RTPAplication:
 
 
     def send_process(self):
+        self.in_RTP_session = True
         sq_num = 0
         while sq_num < self.RTP_packets_num:
             '''Get an RTP packet from a data generator'''
@@ -67,9 +67,12 @@ class RTPAplication:
             yield self.env.timeout(self.RTP_interval)
             sq_num += 1
         yield self.env.timeout(3)
+        self.send_finish_signal()
+        self.in_RTP_session = False
+
+    def send_finish_signal(self):
         RTCP_packet = pk.RTCP(self.address, self.dest_address, 'BYE', self.env.now)
         self.do_send_packet(RTCP_packet)
-
 
     def do_send_packet(self, packet):
         self.env.process(self.network.fwd(self.env, packet))
@@ -99,11 +102,13 @@ class RTPAplication:
     def get_sq_num_vector_and_base_transport_sq_num(self):
         base_transport_sq_num = self.last_pk_reported + 1
         sq_num_vector = []
+        '''
         for i in range (self.last_pk_reported + 1, self.last_received_RTP):
             if self.received_pk_list[i][1] >= (self.last_RTCP_sent_time):
                 base_transport_sq_num = i
                 break
             base_transport_sq_num += 1
+        '''
         for i in range (base_transport_sq_num, self.last_received_RTP + 1):
             sq_num_vector.append(self.received_pk_list[i])
         self.last_pk_reported = self.last_received_RTP
@@ -119,11 +124,11 @@ class RTPAplication:
             if not self.in_RTP_session:
                 self.in_RTP_session = True
                 self.RTCP_process = env.process(self.RTCP_report_process(packet.source_address, 'RR'))
-                yield env.timeout(TIME_TO_START_RTCP_PROCESS)
+                yield env.timeout(self.TIME_TO_START_RTCP_PROCESS)
             x = self.address + " received " + str(packet.sq_num) + " time:" + str(env.now)
             print x
             self.last_received_RTP = packet.sq_num
-            if packet.timestamp < (env.now - MAXIMUM_DELAY):
+            if packet.timestamp < (env.now - self.MAXIMUM_DELAY):
                 self.received_pk_list[packet.sq_num] = (2, env.now)
                 return
             self.received_pk_list[packet.sq_num] =  (1, env.now)
@@ -135,17 +140,23 @@ class RTPAplication:
             print packet.base_transport_sq_num
             print repr(packet.sq_num_vector)
             if packet.type == 'SR':
-                self.gcc_controller.update_packets_info(packet)
-                self.RTP_sending_rate, self.current_bandwidth = self.gcc_controller.adjust_RTP_sending_rate(env, packet, self.last_received_RTP, self.RTCP_limit, self.RTP_packet_size, self.RTP_interval, self.last_received_RTP)
-                print ("RTP sending rate " + str(self.RTP_sending_rate))
-                self.RTP_interval = 1 / (self.RTP_sending_rate / self.RTP_packet_size)
-                return
+                if self.in_RTP_session:
+                    self.gcc_controller.update_packets_info(packet)
+                    self.RTP_sending_rate, self.current_bandwidth = self.gcc_controller.adjust_RTP_sending_rate(env, packet, self.RTCP_limit, self.RTP_packet_size, self.RTP_interval, self.last_sent_RTP)
+                    print ("RTP sending rate " + str(self.RTP_sending_rate))
+                    self.RTP_interval = 1 / (self.RTP_sending_rate / self.RTP_packet_size)
+                    return
+                else:
+                    self.send_finish_signal()
             elif packet.type == 'RR':
-                self.gcc_controller.update_packets_info(packet)
-                self.RTP_sending_rate, self.current_bandwidth = self.gcc_controller.adjust_RTP_sending_rate(env, packet, self.last_received_RTP, self.RTCP_limit, self.RTP_packet_size, self.RTP_interval, self.last_received_RTP)
-                print ("RTP sending rate " + str(self.RTP_sending_rate))
-                self.RTP_interval = 1 / (self.RTP_sending_rate / self.RTP_packet_size)
-                return
+                if self.in_RTP_session:
+                    self.gcc_controller.update_packets_info(packet)
+                    self.RTP_sending_rate, self.current_bandwidth = self.gcc_controller.adjust_RTP_sending_rate(env, packet, self.RTCP_limit, self.RTP_packet_size, self.RTP_interval, self.last_sent_RTP)
+                    print ("RTP sending rate " + str(self.RTP_sending_rate))
+                    self.RTP_interval = 1 / (self.RTP_sending_rate / self.RTP_packet_size)
+                    return
+                else:
+                    self.send_finish_signal()
             elif packet.type == 'BYE':
                 if self.RTCP_process != None:
                     try:
