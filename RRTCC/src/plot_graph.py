@@ -1,7 +1,7 @@
 import json
 import matplotlib.pyplot as plt
 
-filename = '\log_17.txt'
+filename = '\log_23.txt'
 f = open('D:\SimulationResults' + filename, 'r')
 log_string = f.read()
 f.close()
@@ -89,8 +89,8 @@ def plot_lost_ratio():
     plt.ylabel("Loss ratio")
     plt.show()
 
-#plot_bandwidth()
+plot_bandwidth()
 #plot_send_and_receive_time()
-plot_lost_ratio()
+#plot_lost_ratio()
 #plot_jitter()
 #plot_del_val_th()

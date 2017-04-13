@@ -3,7 +3,7 @@ import math
 
 
 class DelayBasedController:
-    def __init__(self, current_bandwidth):
+    def __init__(self, initial_bandwidth):
         self.del_var_th = [12.5] #ms
         self.overuse_time_th = 10 #ms
         self.K_u = 0.01
@@ -13,7 +13,7 @@ class DelayBasedController:
         self.state = 'I'
         self.last_state = 'I'
         self.last_time_estimate_bandwidth = 0
-        self.Ar_arr = [current_bandwidth]
+        self.Ar_arr = [initial_bandwidth]
         self.R_arr = []
         self.R_mean = []
         self.R_deviation = []

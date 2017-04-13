@@ -7,17 +7,17 @@ import os, json
 '''=========================================================================='''
 def log_data():
     print ("log data.")
-    version = "19"
+    version = "23"
     filename = "D:/SimulationResults/log_" + version +".txt"
     fo = open(filename, "wb")
     x = {
-        'A_arr': sender.gcc_controller.A_arr,
-        'Ar_arr': sender.gcc_controller.db_controller.Ar_arr,
-        'As_arr': sender.gcc_controller.lb_controller.As_arr,
-        'lost_ratio': sender.gcc_controller.lb_controller.lost_ratio,
-        'R': sender.gcc_controller.db_controller.R_arr,
-        'm': sender.gcc_controller.m,
-        'del_val_th': sender.gcc_controller.db_controller.del_var_th
+        'A_arr': sender.congestion_controller.A_arr,
+        'Ar_arr': sender.congestion_controller.db_controller.Ar_arr,
+        'As_arr': sender.congestion_controller.lb_controller.As_arr,
+        'lost_ratio': sender.congestion_controller.lb_controller.lost_ratio,
+        'R': sender.congestion_controller.db_controller.R_arr,
+        'm': sender.congestion_controller.m,
+        'del_val_th': sender.congestion_controller.db_controller.del_var_th
     }
     fo.write(json.dumps(x))
     fo.close()
@@ -26,16 +26,19 @@ def log_data():
     x = {
         'RTP_packets_num': sender.RTP_packets_num,
         'Initial_RTP_interval': sender.initial_RTP_interval,
-        'T': sender.gcc_controller.db_controller.T,
+        'T': sender.congestion_controller.db_controller.T,
         'RTCP_interval': sender.RTCP_interval,
         'RTCP_limit': sender.RTCP_limit,
-        'LOSS_THRESHOLD': manager.network.LOSS_THRESHOLD,
+        'LOSS_THRESHOLD': manager.network.NORMAL_LOSS_THRESHOLD,
         'DELAY_MEAN': manager.network.NETWORK_NOISE_MEAN,
         'DELAY_VARIANCE': manager.network.NETWORK_NOISE_DEVIATION,
-        'HOLD_TIME': sender.gcc_controller.db_controller.HOLD_TIME,
-        'Rate_bandwidth_relation': sender.gcc_controller.rate_bandwidth_relation,
-        'alpha': sender.gcc_controller.db_controller.alpha,
-        'boundAs': "Yes"
+        'HOLD_TIME': sender.congestion_controller.db_controller.HOLD_TIME,
+        'Rate_bandwidth_relation': sender.congestion_controller.rate_bandwidth_relation,
+        'alpha': sender.congestion_controller.db_controller.alpha,
+        'boundAs': "Yes",
+        'lambda_out_interval': sender.network.lambda_out_interval,
+        'lambla_outs': sender.network.lambda_outs
+
     }
     fo.write(json.dumps(x))
     fo.close()

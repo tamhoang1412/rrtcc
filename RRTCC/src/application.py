@@ -16,19 +16,19 @@ class RTPAplication:
         self.RTP_packets_num = 500
         self.last_sent_RTP = 0
         self.last_received_RTP = 0
-        self.RTP_packet_size = 1200 * 30 * 8 # bits
-        self.initial_RTP_interval = 0.5
+        self.RTP_packet_size = 1200 * 30 * 8 # bits ~ 3600 bytes
+        self.initial_RTP_interval = 0.1
         self.RTP_interval = self.initial_RTP_interval # 1 packet per RTP_interval
         self.RTP_sending_rate = self.RTP_packet_size  / self.RTP_interval # bit/s
         self.current_bandwidth = self.RTP_packet_size / self.RTP_interval # bit/s (initial estimated bandwidth)S
         self.last_RTCP_sent_time = 0
         self.last_pk_reported = 0
-        self.RTCP_interval = 5
-        self.RTCP_limit = 30
+        self.RTCP_interval = 3
+        self.RTCP_limit = 50
         self.RTCP_process = None
 
         self.received_pk_list = [(0, 0) for i in range(0, self.RTCP_limit * 2)]
-        self.gcc_controller = GccController(self.current_bandwidth, self.RTP_packets_num)
+        self.congestion_controller = GccController(self.current_bandwidth, self.RTP_packets_num)
         self.data_generator = MultimediaDataGenerator(self.address)
 
         '''Exceptions'''
@@ -45,6 +45,7 @@ class RTPAplication:
     def connect(self, manager):
         self.manager = manager
         self.network = manager.network
+        self.network.lambda_in = self.RTP_sending_rate
 
     def start(self, env):
         self.env = env
@@ -60,7 +61,7 @@ class RTPAplication:
             RTP_packet = self.data_generator.gen_RTP_packet(self.dest_address, sq_num, self.env.now)
             '''Update state variables of RTP engine'''
             self.last_sent_RTP = sq_num
-            self.gcc_controller.packets_info[sq_num][1] = self.env.now
+            self.congestion_controller.packets_info[sq_num][1] = self.env.now
             '''Send this RTP packet to network'''
             self.do_send_packet(RTP_packet)
             '''Wait timeout until send the next one'''
@@ -141,19 +142,21 @@ class RTPAplication:
             print repr(packet.sq_num_vector)
             if packet.type == 'SR':
                 if self.in_RTP_session:
-                    self.gcc_controller.update_packets_info(packet)
-                    self.RTP_sending_rate, self.current_bandwidth = self.gcc_controller.adjust_RTP_sending_rate(env, packet, self.RTCP_limit, self.RTP_packet_size, self.RTP_interval, self.last_sent_RTP)
+                    self.congestion_controller.update_packets_info(packet)
+                    self.RTP_sending_rate, self.current_bandwidth = self.congestion_controller.adjust_RTP_sending_rate(env, packet, self.RTCP_limit, self.RTP_packet_size, self.RTP_interval, self.last_sent_RTP)
                     print ("RTP sending rate " + str(self.RTP_sending_rate))
                     self.RTP_interval = 1 / (self.RTP_sending_rate / self.RTP_packet_size)
+                    self.network.lambda_in = self.RTP_sending_rate
                     return
                 else:
                     self.send_finish_signal()
             elif packet.type == 'RR':
                 if self.in_RTP_session:
-                    self.gcc_controller.update_packets_info(packet)
-                    self.RTP_sending_rate, self.current_bandwidth = self.gcc_controller.adjust_RTP_sending_rate(env, packet, self.RTCP_limit, self.RTP_packet_size, self.RTP_interval, self.last_sent_RTP)
+                    self.congestion_controller.update_packets_info(packet)
+                    self.RTP_sending_rate, self.current_bandwidth = self.congestion_controller.adjust_RTP_sending_rate(env, packet, self.RTCP_limit, self.RTP_packet_size, self.RTP_interval, self.last_sent_RTP)
                     print ("RTP sending rate " + str(self.RTP_sending_rate))
                     self.RTP_interval = 1 / (self.RTP_sending_rate / self.RTP_packet_size)
+                    self.network.lambda_in = self.RTP_sending_rate
                     return
                 else:
                     self.send_finish_signal()
@@ -163,6 +166,7 @@ class RTPAplication:
                         self.RTCP_process.interrupt()
                     except Exception as err:
                         print err
+            self.network.lambda_in = self.RTP_sending_rate
         return
 
 

@@ -6,7 +6,7 @@ from delay_based_controller import DelayBasedController
 '''=========================================================================='''
 
 class GccController:
-    def __init__(self, current_bandwidth, max_num_packets):
+    def __init__(self, initial_bandwidth, max_num_packets):
         '''Constant'''
         self.overuse_time_th = 10 #ms
         self.K_u = 0.01
@@ -20,9 +20,9 @@ class GccController:
             b: sent time
             c: received time '''
         self.last_reported_pk = 0
-        self.A_arr = [(current_bandwidth, 0)]
-        self.lb_controller = LossBasedController(current_bandwidth)
-        self.db_controller = DelayBasedController(current_bandwidth)
+        self.A_arr = [(initial_bandwidth, 0)]
+        self.lb_controller = LossBasedController(initial_bandwidth)
+        self.db_controller = DelayBasedController(initial_bandwidth)
         self.d = [0 for i in range(0, max_num_packets)]
         # self.dL = [0 for i in range(0, self.RTP_packets_num)]
         # self.C = [0 for i in range(0, self.RTP_packets_num)]
@@ -32,6 +32,7 @@ class GccController:
     def update_packets_info(self, rtcp_pk):
         i = 0
         base_sq = rtcp_pk.base_transport_sq_num
+        index = base_sq
         for info in rtcp_pk.sq_num_vector:
             index = base_sq + i
             if info[1] != 0:
@@ -60,7 +61,7 @@ class GccController:
         print 'As:' + str(As) + ' Ar:' + str(Ar)
         current_bandwidth = As if As < Ar else Ar
         self.A_arr.append((current_bandwidth, env.now))
-        self.lb_controller.As_arr[-1] = current_bandwidth
+        self.lb_controller.As_arr[-1] = current_bandwidth #bounded As
         RTP_sending_rate = current_bandwidth * self.rate_bandwidth_relation
         print 'current bandwidth:' + str(current_bandwidth)
         print 'RTP interval:' + str(RTP_interval)
