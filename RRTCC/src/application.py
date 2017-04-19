@@ -1,7 +1,6 @@
 import simpy
 
 import packet as pk
-from congestion_controller import GccController
 from data_generator import MultimediaDataGenerator
 
 class RTPAplication:
@@ -17,18 +16,18 @@ class RTPAplication:
         self.last_sent_RTP = 0
         self.last_received_RTP = 0
         self.RTP_packet_size = 1200 * 30 * 8 # bits ~ 3600 bytes
-        self.initial_RTP_interval = 0.1
+        self.initial_RTP_interval = 0.04
         self.RTP_interval = self.initial_RTP_interval # 1 packet per RTP_interval
         self.RTP_sending_rate = self.RTP_packet_size  / self.RTP_interval # bit/s
         self.current_bandwidth = self.RTP_packet_size / self.RTP_interval # bit/s (initial estimated bandwidth)S
         self.last_RTCP_sent_time = 0
         self.last_pk_reported = 0
         self.RTCP_interval = 3
-        self.RTCP_limit = 50
+        self.RTCP_limit = 70
         self.RTCP_process = None
 
         self.received_pk_list = [(0, 0) for i in range(0, self.RTCP_limit * 2)]
-        self.congestion_controller = GccController(self.current_bandwidth, self.RTP_packets_num)
+        self.congestion_controller = None
         self.data_generator = MultimediaDataGenerator(self.address)
 
         '''Exceptions'''

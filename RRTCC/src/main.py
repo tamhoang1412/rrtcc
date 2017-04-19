@@ -1,13 +1,14 @@
 import simpy
 from manager import Manager
 from application import RTPAplication
+from congestion_controller import GccController, NonsenseCongestionController
 import os, json
 
 
 '''=========================================================================='''
 def log_data():
     print ("log data.")
-    version = "23"
+    version = "29"
     filename = "D:/SimulationResults/log_" + version +".txt"
     fo = open(filename, "wb")
     x = {
@@ -53,6 +54,10 @@ manager = Manager()
 '''Create sender and add it to the manager'''
 sender_address = 'A'
 sender = RTPAplication(sender_address)
+Gcc_controller = GccController(sender.current_bandwidth, sender.RTP_packets_num)
+UDP_controller = NonsenseCongestionController(sender.current_bandwidth, sender.RTP_packets_num)
+#sender.congestion_controller = UDP_controller
+sender.congestion_controller = Gcc_controller
 manager.add_node(sender)
 
 '''Create receiver and add it to the manager'''
