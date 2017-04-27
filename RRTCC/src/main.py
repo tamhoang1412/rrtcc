@@ -8,7 +8,7 @@ import os, json
 '''=========================================================================='''
 def log_data():
     print ("log data.")
-    version = "05"
+    version = "11"
     filename = "D:/SimulationResults/log_thesis_" + version +".txt"
     fo = open(filename, "wb")
     x = {
@@ -18,11 +18,12 @@ def log_data():
         'lost_ratio': sender.congestion_controller.lb_controller.lost_ratio,
         'R': sender.congestion_controller.db_controller.R_arr,
         'm': sender.congestion_controller.m,
-        'del_val_th': sender.congestion_controller.db_controller.del_var_th
+        'del_val_th': sender.congestion_controller.db_controller.del_var_th,
+        'lambda_outs_index': sender.network.lambda_outs_indexes
     }
     fo.write(json.dumps(x))
     fo.close()
-    filename = "D:/SimulationResults/log_" + version + "_para.txt"
+    filename = "D:/SimulationResults/log_thesis_" + version + "_para.txt"
     fo = open(filename, "wb")
     x = {
         'RTP_packets_num': sender.RTP_packets_num,
@@ -37,8 +38,7 @@ def log_data():
         'Rate_bandwidth_relation': sender.congestion_controller.rate_bandwidth_relation,
         'alpha': sender.congestion_controller.db_controller.alpha,
         'lambda_out_interval': sender.network.lambda_out_interval,
-        'lambda_outs': sender.network.lambda_outs,
-        'lambda_outs_index': sender.network.lambda_outs_indexes
+        'lambda_outs': sender.network.lambda_outs
 
     }
     fo.write(json.dumps(x))

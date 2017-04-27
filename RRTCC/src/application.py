@@ -10,7 +10,7 @@ class RTPAplication:
         self.address = address
         self.dest_address = None
         self.in_RTP_session = False
-        self.RTP_packets_num = 1000
+        self.RTP_packets_num = 500
         self.last_sent_RTP = 0
         self.last_received_RTP = 0
         self.RTP_packet_size = 1200 * 30 * 8 # bits ~ 3600 bytes

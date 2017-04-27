@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 
 '''=========================================================================='''
 
@@ -12,7 +13,7 @@ class Network:
         self.loss_threshold = self.NORMAL_LOSS_THRESHOLD
         self.RTP_packet_size = 1200 * 30 * 8  # bits
         #self.available_bandwidth_coef = [0, 10, 15, 20]
-        self.available_bandwidth_coef = [0, 15, 20, 25]
+        self.available_bandwidth_coef = [0, 5, 10, 15]
         self.lambda_outs = [self.RTP_packet_size * i for i in self.available_bandwidth_coef]
         self.lambda_outs_indexes = []
         self.lambda_outs_num = len(self.lambda_outs)
@@ -33,7 +34,7 @@ class Network:
 
 
     def fwd(self, env, packet):
-        self.update_lambda_out(env.now)
+        self.update_lambda_out(copy.deepcopy(env.now))
         loss_probability = np.random.uniform(0.0, 1.0)
         print "loss_threshold: " + str(self.loss_threshold)
         if loss_probability < self.loss_threshold:
@@ -44,7 +45,7 @@ class Network:
 
 
     def update_lambda_out(self, current_time):
-        if self.last_time_update_lambda_out  > (current_time - self.lambda_out_interval):
+        if (current_time - self.lambda_out_interval) > self.last_time_update_lambda_out:
             index_probability = np.random.uniform(0.0, 1.0)
             if index_probability < self.congestion_probability_threshold:
                 index = 0 #congestion
@@ -52,7 +53,7 @@ class Network:
                 index = self.lambda_outs_num - 1
             else:
                 index = np.random.randint(1, self.lambda_outs_num)
-            self.lambda_outs_indexes.append(index)
+            self.lambda_outs_indexes.append((self.lambda_outs[index], current_time))
             self.lambda_out = self.lambda_outs[index]
             self.last_time_update_lambda_out = current_time
             self.update_loss_threshold()
