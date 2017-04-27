@@ -8,8 +8,8 @@ import os, json
 '''=========================================================================='''
 def log_data():
     print ("log data.")
-    version = "29"
-    filename = "D:/SimulationResults/log_" + version +".txt"
+    version = "05"
+    filename = "D:/SimulationResults/log_thesis_" + version +".txt"
     fo = open(filename, "wb")
     x = {
         'A_arr': sender.congestion_controller.A_arr,
@@ -36,9 +36,9 @@ def log_data():
         'HOLD_TIME': sender.congestion_controller.db_controller.HOLD_TIME,
         'Rate_bandwidth_relation': sender.congestion_controller.rate_bandwidth_relation,
         'alpha': sender.congestion_controller.db_controller.alpha,
-        'boundAs': "Yes",
         'lambda_out_interval': sender.network.lambda_out_interval,
-        'lambla_outs': sender.network.lambda_outs
+        'lambda_outs': sender.network.lambda_outs,
+        'lambda_outs_index': sender.network.lambda_outs_indexes
 
     }
     fo.write(json.dumps(x))

@@ -5,14 +5,16 @@ import numpy as np
 class Network:
     def __init__(self, manager):
         self.manager = manager
-        self.NORMAL_LOSS_THRESHOLD = 0.015
+        self.NORMAL_LOSS_THRESHOLD = 0.01
         self.NETWORK_NOISE_MEAN = 0.01
         self.NETWORK_NOISE_DEVIATION = 0.001
 
         self.loss_threshold = self.NORMAL_LOSS_THRESHOLD
         self.RTP_packet_size = 1200 * 30 * 8  # bits
-        self.available_bandwidth_coef = [0, 10, 15, 20]
+        #self.available_bandwidth_coef = [0, 10, 15, 20]
+        self.available_bandwidth_coef = [0, 15, 20, 25]
         self.lambda_outs = [self.RTP_packet_size * i for i in self.available_bandwidth_coef]
+        self.lambda_outs_indexes = []
         self.lambda_outs_num = len(self.lambda_outs)
         self.lambda_out = self.lambda_outs[-1]
         self.lambda_in = 0
@@ -24,7 +26,6 @@ class Network:
 
 
     def get_delay(self):
-        #gen random delay for network link
         delay = np.random.normal(self.NETWORK_NOISE_MEAN, self.NETWORK_NOISE_DEVIATION)
         if delay < 0:
             delay = self.NETWORK_NOISE_MEAN
@@ -51,7 +52,7 @@ class Network:
                 index = self.lambda_outs_num - 1
             else:
                 index = np.random.randint(1, self.lambda_outs_num)
-            print "random index " + str(index)
+            self.lambda_outs_indexes.append(index)
             self.lambda_out = self.lambda_outs[index]
             self.last_time_update_lambda_out = current_time
             self.update_loss_threshold()
@@ -61,9 +62,6 @@ class Network:
     def update_loss_threshold(self):
         if self.lambda_in > self.lambda_out:
             self.loss_threshold = (self.lambda_in - self.lambda_out) / float(self.lambda_in)
-            print "************************************************************** lamda in: " + str(self.lambda_in) + "  lamda out: " + str(self.lambda_out)
         else:
-            print "============================================================== lamda in: " + str(self.lambda_in) + "  lamda out: " + str(self.lambda_out)
             self.loss_threshold = self.NORMAL_LOSS_THRESHOLD
         return
-'''=========================================================================='''

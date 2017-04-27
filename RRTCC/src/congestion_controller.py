@@ -2,14 +2,14 @@ from pykalman import KalmanFilter
 import numpy as np
 from loss_based_controller import LossBasedController
 from delay_based_controller import DelayBasedController
-from abc import ABCMeta, abstractmethod
+from abc import abstractmethod
 
 
 class CongestionController(object):
     def __init__(self, initial_bandwidth, max_num_packets):
         self.initial_bandwidth = initial_bandwidth
         self.max_num_packets = max_num_packets
-        self.rate_bandwidth_relation = 0.9
+        self.rate_bandwidth_relation = 1
         self.packets_info = [[0, 0, 0] for i in range(0, max_num_packets)]
         ''' (a, b, c)
                    a: status: 1 for arriving on time, 2 for late, 0 for missing
@@ -19,10 +19,7 @@ class CongestionController(object):
         self.lb_controller = LossBasedController(initial_bandwidth)
         self.db_controller = DelayBasedController(initial_bandwidth)
         self.d = [0 for i in range(0, max_num_packets)]
-        # self.dL = [0 for i in range(0, self.RTP_packets_num)]
-        # self.C = [0 for i in range(0, self.RTP_packets_num)]
         self.m = [0 for i in range(0, max_num_packets)]
-        # self.v = [0 for i in range(0, self.RTP_packets_num)]
 
 
     @abstractmethod

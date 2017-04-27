@@ -1,31 +1,42 @@
 import json
 import matplotlib.pyplot as plt
 
-filename = '\log_29.txt'
-f = open('D:\SimulationResults' + filename, 'r')
-log_string = f.read()
-f.close()
-log = json.loads(log_string)
+filename_gcc = '\log_thesis_03.txt'
+filename_udp = '\log_thesis_04.txt'
+f1 = open('D:\SimulationResults' + filename_gcc, 'r')
+f2 = open('D:\SimulationResults' + filename_udp, 'r')
+log_string_gcc = f1.read()
+log_string_udp = f2.read()
+
+f1.close()
+f2.close()
+log_gcc = json.loads(log_string_gcc)
+log_udp = json.loads(log_string_udp)
 
 packets = []
 send_time = []
 receive_time = []
 
-A_arr = []
-As_arr = []
-Ar_arr = []
-A_time = []
+A_arr_gcc = []
+As_arr_gcc = []
+Ar_arr_gcc = []
+A_time_gcc = []
+
+A_arr_udp = []
+A_time_udp = []
 
 #jitter = log['jitter']
 m = []
 del_val_th_index = []
 del_val_th = []
-lost_ratio = []
-lost_ratio_time = []
+lost_ratio_gcc = []
+lost_ratio_udp = []
 
-for i in range(0, len(log['lost_ratio'])):
-    lost_ratio.append(log['lost_ratio'][i])
-    #lost_ratio_time.append(log['lost_ratio'][i])
+for i in range(0, len(log_gcc['lost_ratio'])):
+    lost_ratio_gcc.append(log_gcc['lost_ratio'][i])
+
+for i in range(0, len(log_udp['lost_ratio'])):
+    lost_ratio_udp.append(log_udp['lost_ratio'][i])
 
 '''
 for i in range(0, len(log['m'])):
@@ -40,12 +51,17 @@ for i in range(0, len(log['del_val_th'])):
     #send_time.append(log['packets_info'][i][1])
     #receive_time.append(log['packets_info'][i][2])
 '''
-for i in range(0, len(log['A_arr'])):
-    A_arr.append(log['A_arr'][i][0])
-    A_time.append(log['A_arr'][i][1])
-    As_arr.append(log['As_arr'][i])
-    Ar_arr.append(log['Ar_arr'][i])
+for i in range(0, len(log_gcc['A_arr'])):
+    A_arr_gcc.append(log_gcc['A_arr'][i][0])
+    A_time_gcc.append(log_gcc['A_arr'][i][1])
+    As_arr_gcc.append(log_gcc['As_arr'][i])
+    Ar_arr_gcc.append(log_gcc['Ar_arr'][i])
 
+for i in range(0, len(log_udp['A_arr'])):
+    A_arr_udp.append(log_udp['A_arr'][i][0])
+    A_time_udp.append(log_udp['A_arr'][i][1])
+
+'''
 def plot_send_and_receive_time():
     plt.plot(packets, send_time, color="red")
     plt.plot(packets, send_time, 'ro', color="red")
@@ -63,7 +79,6 @@ def plot_del_val_th():
     plt.plot(del_val_th_index, del_val_th, 'ro', color="blue")
     plt.show()
 
-'''
 def plot_jitter():
     plt.plot(packets, jitter, color="yellow")
     plt.plot(packets, jitter, 'ro', color="yellow")
@@ -72,10 +87,11 @@ def plot_jitter():
 
 def plot_bandwidth():
     fig = plt.figure()
-    plt.plot(A_time, As_arr, color="black", linestyle="-", label="As")
-    plt.plot(A_time, Ar_arr, color="red", label="Ar")
-    plt.plot(A_time, A_arr, 'ro', color="yellow", label="A")
-    fig.suptitle("Estimated bandwidth " + filename, fontsize=20)
+    plt.plot(A_time_gcc, As_arr_gcc, color="black", linestyle="-", label="As")
+    plt.plot(A_time_udp, A_arr_udp, 'ro', color="pink", label="A")
+    plt.plot(A_time_gcc, Ar_arr_gcc, color="red", label="Ar")
+    plt.plot(A_time_gcc, A_arr_gcc, 'ro', color="yellow", label="A")
+    fig.suptitle("Estimated bandwidth GCC " + filename_gcc, fontsize=20)
     plt.xlabel("Time(s)")
     plt.ylabel("Value(bit/s)")
     plt.legend()
@@ -83,14 +99,14 @@ def plot_bandwidth():
 
 
 def plot_lost_ratio():
-    plt.plot(A_time, lost_ratio, color="green")
-    plt.plot(A_time, lost_ratio, 'ro', color="green")
+    plt.plot(A_time_gcc, lost_ratio_gcc, color="green")
+    plt.plot(A_time_gcc, lost_ratio_gcc, 'ro', color="green")
+    plt.plot(A_time_udp, lost_ratio_udp, color="green")
+    plt.plot(A_time_udp, lost_ratio_udp, 'ro', color="green")
     plt.xlabel("Time(s)")
     plt.ylabel("Loss ratio")
     plt.show()
 
-plot_bandwidth()
-#plot_send_and_receive_time()
-#plot_lost_ratio()
-#plot_jitter()
-#plot_del_val_th()
+plot_lost_ratio()
+#plot_bandwidth()
+#for p in A_arr: print p

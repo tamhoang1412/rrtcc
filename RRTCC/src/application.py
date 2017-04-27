@@ -7,12 +7,10 @@ class RTPAplication:
     def __init__(self, address):
         self.MAXIMUM_DELAY = 0.011
         self.TIME_TO_START_RTCP_PROCESS = 0.0001
-
         self.address = address
         self.dest_address = None
-
         self.in_RTP_session = False
-        self.RTP_packets_num = 500
+        self.RTP_packets_num = 1000
         self.last_sent_RTP = 0
         self.last_received_RTP = 0
         self.RTP_packet_size = 1200 * 30 * 8 # bits ~ 3600 bytes
@@ -23,7 +21,7 @@ class RTPAplication:
         self.last_RTCP_sent_time = 0
         self.last_pk_reported = 0
         self.RTCP_interval = 3
-        self.RTCP_limit = 70
+        self.RTCP_limit = 80
         self.RTCP_process = None
 
         self.received_pk_list = [(0, 0) for i in range(0, self.RTCP_limit * 2)]
