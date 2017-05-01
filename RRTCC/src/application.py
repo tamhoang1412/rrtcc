@@ -10,7 +10,7 @@ class RTPAplication:
         self.address = address
         self.dest_address = None
         self.in_RTP_session = False
-        self.RTP_packets_num = 500
+        self.RTP_packets_num = 1000
         self.last_sent_RTP = 0
         self.last_received_RTP = 0
         self.RTP_packet_size = 1200 * 30 * 8 # bits ~ 3600 bytes
@@ -24,7 +24,7 @@ class RTPAplication:
         self.RTCP_limit = 80
         self.RTCP_process = None
 
-        self.received_pk_list = [(0, 0) for i in range(0, self.RTCP_limit * 2)]
+        self.received_pk_list = [(0, 0) for i in range(0, self.RTP_packets_num)]
         self.congestion_controller = None
         self.data_generator = MultimediaDataGenerator(self.address)
 
@@ -85,8 +85,6 @@ class RTPAplication:
             except simpy.Interrupt:
                 print 'Stop RTCP process'
                 return
-            for i in range (0, self.RTCP_limit):
-                self.received_pk_list.append((0, 0))
             rtcp_packet = pk.RTCP(self.address, dest_address, report_type, self.env.now)
             rtcp_packet.fb_sq_num = fb_sq_num
             rtcp_packet.sq_num_vector, rtcp_packet.base_transport_sq_num = self.get_sq_num_vector_and_base_transport_sq_num()

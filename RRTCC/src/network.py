@@ -12,8 +12,12 @@ class Network:
 
         self.loss_threshold = self.NORMAL_LOSS_THRESHOLD
         self.RTP_packet_size = 1200 * 30 * 8  # bits
+
+        #self.available_bandwidth_coef = [0, 5, 10, 15]
         #self.available_bandwidth_coef = [0, 10, 15, 20]
+        #self.available_bandwidth_coef = [0, 15, 20, 25]
         self.available_bandwidth_coef = [0, 5, 10, 15]
+
         self.lambda_outs = [self.RTP_packet_size * i for i in self.available_bandwidth_coef]
         self.lambda_outs_indexes = []
         self.lambda_outs_num = len(self.lambda_outs)
@@ -22,7 +26,7 @@ class Network:
         self.lambda_out_interval = 2
 
         self.last_time_update_lambda_out = 0
-        self.congestion_probability_threshold = 0.03
+        self.congestion_probability_threshold = 0.05
         self.free_bandwidth_probability_threshold = 0.3
 
 

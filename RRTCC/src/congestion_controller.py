@@ -87,6 +87,8 @@ class GccController(CongestionController):
         Ar = self.db_controller.estimate_bandwidth(env, RTCP_packet.timestamp, self.packets_info, self.m, self.last_reported_pk, RTCP_limit, RTP_packet_size)
         print 'As:' + str(As) + ' Ar:' + str(Ar)
         current_bandwidth = As if As < Ar else Ar
+        current_bandwidth = 3000000 if current_bandwidth < 3000000 else current_bandwidth
+        current_bandwidth = 10000000 if current_bandwidth > 10000000 else current_bandwidth
         self.A_arr.append((current_bandwidth, env.now))
         self.lb_controller.As_arr[-1] = current_bandwidth #bounded As
         RTP_sending_rate = current_bandwidth * self.rate_bandwidth_relation

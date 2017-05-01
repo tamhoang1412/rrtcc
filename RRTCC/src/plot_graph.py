@@ -2,8 +2,17 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 
-filename_gcc = '\log_thesis_10.txt'
-filename_udp = '\log_thesis_09.txt'
+#filename_gcc = '\log_thesis_200.txt'
+#filename_udp = '\log_thesis_201.txt'
+filename_gcc = '\log_thesis_266.txt'
+filename_udp = '\log_thesis_267.txt'
+#filename_gcc = '\log_thesis_300.txt'
+#filename_udp = '\log_thesis_301.txt'
+#filename_gcc = '\log_thesis_350.txt'
+#filename_udp = '\log_thesis_351.txt'
+
+
+
 f1 = open('D:\SimulationResults' + filename_gcc, 'r')
 f2 = open('D:\SimulationResults' + filename_udp, 'r')
 log_string_gcc = f1.read()
@@ -115,17 +124,23 @@ def plot_jitter():
 
 def plot_bandwidth():
     fig = plt.figure()
-    #plt.plot(A_time_gcc, As_arr_gcc, 'r--', color="black", label="As")
-    #plt.plot(A_time_gcc, Ar_arr_gcc, 'bs', color="black", label="Ar")
+
+    '''
+    plt.plot(A_time_gcc, As_arr_gcc, '--', color="black", label="As")
+    plt.plot(A_time_gcc, Ar_arr_gcc, '-.', color="black", label="Ar")
+    plt.plot(A_time_gcc, A_arr_gcc, 'bs', color="black", label="A")
+    plt.plot([0, 50], [7220000, 7220000], ':', color="black", label="A UDP")
+    plt.step(lambda_outs_index_gcc_time, lambda_outs_index_gcc, ':', color="black", label='Real bandwidth')
+    '''
 
 
-    #plt.plot(A_time_gcc, A_arr_gcc, '--', color="black", label="A (RRTCC)")
-    #plt.step(lambda_outs_index_gcc_time, lambda_outs_index_gcc, 'g^', color="black", label='Real bandwidth (RRTCC)')
+    plt.plot(A_time_gcc, A_arr_gcc, '--', color="black", label="A (RRTCC)")
+    plt.step(lambda_outs_index_gcc_time, lambda_outs_index_gcc, 'g^', color="black", label='Real bandwidth (RRTCC)')
 
     plt.plot(A_time_udp, A_arr_udp, '-.', color="black", label="A (UDP)")
-    plt.step(lambda_outs_index_udp_time, lambda_outs_index_udp, 'bs', color="black", label='Real bandwidth (UDP)')
+    plt.step(lambda_outs_index_udp_time, lambda_outs_index_udp, 'bs', color="red", label='Real bandwidth (UDP)')
 
-    fig.suptitle("Estimated bandwidth " + filename_gcc, fontsize=20)
+    #fig.suptitle("Estimated bandwidth " + filename_gcc, fontsize=20)
     plt.xlabel("Time(s)")
     plt.ylabel("Value(bit/s)")
     plt.legend()
@@ -136,12 +151,15 @@ def plot_lost_ratio():
     fig = plt.figure()
     plt.plot(A_time_gcc, lost_ratio_gcc, '-', color="black", label="Loss ratio (RRTCC)")
     plt.plot(A_time_udp, lost_ratio_udp, '--', color="black", label="Loss ratio (UDP)" )
-    fig.suptitle("Loss ratio " + filename_gcc, fontsize=20)
+    #fig.suptitle("Loss ratio " + filename_gcc, fontsize=20)
     plt.xlabel("Time(s)")
     plt.ylabel("Loss ratio")
     plt.legend()
     plt.show()
 
-#plot_lost_ratio()
+plot_lost_ratio()
 plot_bandwidth()
-#for p in A_arr: print p
+#for a in A_arr_gcc: print a
+#for p in lost_ratio_gcc: print p
+
+#for p in lost_ratio_udp: print p
