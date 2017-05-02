@@ -7,7 +7,7 @@ import os, json
 
 def log_data():
     print ("log data.")
-    version = "004"
+    version = "020"
     filename = "D:/SimulationResults/log_thesis_udp_" + version +".txt"
     fo = open(filename, "wb")
     x = {

@@ -50,7 +50,7 @@ class DelayBasedController:
         increase_state = self.get_increase_state()
         time_since_last_update_ms = (env.now - self.last_time_estimate_bandwidth) * 1000
         if increase_state == "multiplicative":
-            eta = 1.08 ** min(time_since_last_update_ms / 1000, 1.0)
+            eta = 1.08 ** min(time_since_last_update_ms / float(1000), 1.0)
             Ar = eta * last_Ar
             print " Ar = eta * last_Ar"
         else:

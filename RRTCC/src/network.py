@@ -39,7 +39,6 @@ class Network:
     def fwd(self, env, packet):
         self.update_loss_threshold(copy.deepcopy(env.now))
         loss_probability = np.random.uniform(0.0, 1.0)
-        print "loss_threshold: " + str(self.loss_threshold)
         if loss_probability < self.loss_threshold:
             return
         dest = self.manager.get_element_by_address(packet.dest_address)
@@ -68,7 +67,7 @@ class Network:
 
 
     def update_loss_threshold(self, current_time):
-        time_index = int(current_time / self.lambda_out_interval)
+        time_index = int(current_time / float(self.lambda_out_interval))
         self.lambda_out = self.lambda_outs[self.lambda_outs_indexes[time_index]]
         if self.lambda_in > self.lambda_out:
             self.loss_threshold = (self.lambda_in - self.lambda_out) / float(self.lambda_in)

@@ -5,7 +5,7 @@ from congestion_controller import GccController, NonsenseCongestionController
 import os, json
 
 
-version = "004"
+version = "020"
 def log_data():
     print ("log data.")
     filename = "D:/SimulationResults/log_thesis_gcc_" + version +".txt"

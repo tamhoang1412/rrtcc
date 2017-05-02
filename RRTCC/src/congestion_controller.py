@@ -92,8 +92,6 @@ class GccController(CongestionController):
         self.A_arr.append((current_bandwidth, env.now))
         self.lb_controller.As_arr[-1] = current_bandwidth #bounded As
         RTP_sending_rate = current_bandwidth * self.rate_bandwidth_relation
-        print 'current bandwidth:' + str(current_bandwidth)
-        print 'RTP interval:' + str(RTP_interval)
         return (RTP_sending_rate, current_bandwidth)
 
 
