@@ -5,11 +5,10 @@ from congestion_controller import GccController, NonsenseCongestionController
 import os, json
 
 
-'''=========================================================================='''
 def log_data():
     print ("log data.")
-    version = "000"
-    filename = "D:/SimulationResults/log_thesis_" + version +".txt"
+    version = "004"
+    filename = "D:/SimulationResults/log_thesis_udp_" + version +".txt"
     fo = open(filename, "wb")
     x = {
         'A_arr': sender.congestion_controller.A_arr,
@@ -19,11 +18,13 @@ def log_data():
         'R': sender.congestion_controller.db_controller.R_arr,
         'm': sender.congestion_controller.m,
         'del_val_th': sender.congestion_controller.db_controller.del_var_th,
-        'lambda_outs_index': sender.network.lambda_outs_indexes
+        'lambda_outs_index': sender.network.lambda_outs_indexes,
+        'lambda_outs': sender.network.lambda_outs,
+        'lambda_out_interval': sender.network.lambda_out_interval
     }
     fo.write(json.dumps(x))
     fo.close()
-    filename = "D:/SimulationResults/log_thesis_" + version + "_para.txt"
+    filename = "D:/SimulationResults/log_thesis_udp_" + version + "_para.txt"
     fo = open(filename, "wb")
     x = {
         'RTP_packets_num': sender.RTP_packets_num,
@@ -37,17 +38,15 @@ def log_data():
         'HOLD_TIME': sender.congestion_controller.db_controller.HOLD_TIME,
         'Rate_bandwidth_relation': sender.congestion_controller.rate_bandwidth_relation,
         'alpha': sender.congestion_controller.db_controller.alpha,
+        'lambda_outs': sender.network.lambda_outs,
         'lambda_out_interval': sender.network.lambda_out_interval,
-        'lambda_outs': sender.network.lambda_outs
-
+        'coef': sender.network.available_bandwidth_coef
     }
     fo.write(json.dumps(x))
     fo.close()
 
-'''=========================================================================='''
 
 SIM_TIME = 1500
-
 env = simpy.Environment()
 manager = Manager()
 
@@ -56,8 +55,7 @@ sender_address = 'A'
 sender = RTPAplication(sender_address)
 Gcc_controller = GccController(sender.current_bandwidth, sender.RTP_packets_num)
 UDP_controller = NonsenseCongestionController(sender.current_bandwidth, sender.RTP_packets_num)
-#sender.congestion_controller = UDP_controller
-sender.congestion_controller = Gcc_controller
+sender.congestion_controller = UDP_controller
 manager.add_node(sender)
 
 '''Create receiver and add it to the manager'''
@@ -68,7 +66,7 @@ manager.add_node(receiver)
 sender.add_dest_address(receiver.address)
 sender.connect(manager)
 receiver.connect(manager)
-#env.process(sender.send_RTP(env, receiver.address, network))
+sender.network.generate_lambda_outs()
 sender.start(env)
 
 env.run(SIM_TIME)
