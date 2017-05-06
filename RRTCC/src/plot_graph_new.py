@@ -2,7 +2,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 
-version = "003"
+version = "13"
 filename_gcc = '\log_thesis_gcc_' + version + '.txt'
 filename_udp = '\log_thesis_udp_' + version + '.txt'
 
@@ -56,19 +56,8 @@ for i in range(0, len(log_gcc['lost_ratio'])):
 for i in range(0, len(log_udp['lost_ratio'])):
     lost_ratio_udp.append(log_udp['lost_ratio'][i])
 
-'''
-for i in range(0, len(log['m'])):
-    packets.append(i)
-    m.append(log['m'][i])
-    #send_time.append(log['packets_info'][i][1])
-    #receive_time.append(log['packets_info'][i][2])
 
-for i in range(0, len(log['del_val_th'])):
-    del_val_th_index.append(i)
-    del_val_th.append(log['del_val_th'][i])
-    #send_time.append(log['packets_info'][i][1])
-    #receive_time.append(log['packets_info'][i][2])
-'''
+
 for i in range(0, len(log_gcc['A_arr'])):
     A_arr_gcc.append(log_gcc['A_arr'][i][0])
     A_time_gcc.append(log_gcc['A_arr'][i][1])
@@ -81,11 +70,17 @@ for i in range(0, len(log_udp['A_arr'])):
 
 
 def plot_bandwidth():
-    plt.plot(A_time_gcc, A_arr_gcc, '--', color="black", label="A (RRTCC)")
-    plt.step(lambda_outs_index_gcc_time, lambda_outs_index_gcc, 'g^', color="black", label='Real bandwidth (RRTCC)')
+    plt.plot(A_time_gcc, As_arr_gcc, '--', color="black", label="As")
+    plt.plot(A_time_gcc, Ar_arr_gcc, '-.', color="black", label="Ar")
+    plt.plot(A_time_gcc, A_arr_gcc, 'bs', color="black", label="A")
+    plt.plot([0, 50], [14420000, 14420000], ':', color="black", label="A UDP")
+    plt.step(lambda_outs_index_gcc_time, lambda_outs_index_gcc, ':', color="black", label='Real bandwidth')
 
-    plt.plot(A_time_udp, A_arr_udp, '-.', color="black", label="A (UDP)")
-    plt.step(lambda_outs_index_udp_time, lambda_outs_index_udp, 'bs', color="red", label='Real bandwidth (UDP)')
+    #plt.plot(A_time_gcc, A_arr_gcc, '--', color="black", label="A (RRTCC)")
+    #plt.step(lambda_outs_index_gcc_time, lambda_outs_index_gcc, 'g^', color="black", label='Real bandwidth (RRTCC)')
+
+    #plt.plot(A_time_udp, A_arr_udp, '-.', color="black", label="A (UDP)")
+    #plt.step(lambda_outs_index_udp_time, lambda_outs_index_udp, 'bs', color="red", label='Real bandwidth (UDP)')
 
     plt.xlabel("Time(s)")
     plt.ylabel("Value(bit/s)")
@@ -103,6 +98,24 @@ def plot_lost_ratio():
 
 plot_lost_ratio()
 plot_bandwidth()
-#for a in A_arr_gcc: print a
-#for p in lost_ratio_gcc: print p
-#for p in lost_ratio_udp: print p
+'''\
+for a in A_arr_gcc: print a
+print "====================================================================="
+for p in lost_ratio_gcc: print p
+print "====================================================================="
+for p in lost_ratio_udp: print p
+print "====================================================================="
+'''
+n = 0
+for i in range(0, len(log_gcc['received_pk_list'])):
+    if log_gcc['received_pk_list'][i][0] == 0:
+        n += 1
+print n
+print len(log_gcc['received_pk_list'])
+
+n = 0
+for i in range(0, len(log_udp['received_pk_list'])):
+    if log_udp['received_pk_list'][i][0] == 0:
+        n += 1
+print n
+print len(log_udp['received_pk_list'])

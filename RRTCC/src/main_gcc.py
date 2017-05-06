@@ -5,7 +5,7 @@ from congestion_controller import GccController, NonsenseCongestionController
 import os, json
 
 
-version = "020"
+version = "test"
 def log_data():
     print ("log data.")
     filename = "D:/SimulationResults/log_thesis_gcc_" + version +".txt"
@@ -20,7 +20,9 @@ def log_data():
         'del_val_th': sender.congestion_controller.db_controller.del_var_th,
         'lambda_outs_index': sender.network.lambda_outs_indexes,
         'lambda_outs': sender.network.lambda_outs,
-        'lambda_out_interval': sender.network.lambda_out_interval
+        'lambda_out_interval': sender.network.lambda_out_interval,
+        'packets_info': sender.congestion_controller.packets_info,
+        'received_pk_list': receiver.received_pk_list
     }
     fo.write(json.dumps(x))
     fo.close()
@@ -40,35 +42,55 @@ def log_data():
         'alpha': sender.congestion_controller.db_controller.alpha,
         'lambda_outs': sender.network.lambda_outs,
         'lambda_out_interval': sender.network.lambda_out_interval,
-        'coef': sender.network.available_bandwidth_coef
+        'coef': sender.network.available_bandwidth_coef,
+        'maximum_sending_rate': sender.congestion_controller.maximum_sending_rate,
+        'minimum_sending_rate': sender.congestion_controller.minimum_sending_rate
     }
     fo.write(json.dumps(x))
     fo.close()
 
 '''=========================================================================='''
 
-SIM_TIME = 1500
-env = simpy.Environment()
-manager = Manager()
+'''
+network_coef = [
+    [0, 10, 20, 40],
+    [0, 20, 30, 50],
+    [0, 30, 40, 60],
+    [0, 40, 50, 70]
+]
+'''
 
-'''Create sender and add it to the manager'''
-sender_address = 'A'
-sender = RTPAplication(sender_address)
-Gcc_controller = GccController(sender.current_bandwidth, sender.RTP_packets_num)
-UDP_controller = NonsenseCongestionController(sender.current_bandwidth, sender.RTP_packets_num)
-sender.congestion_controller = Gcc_controller
-manager.add_node(sender)
+network_coef = [
+    [0, 5, 10, 15],
+    [0, 10, 15, 20],
+    [0, 15, 20, 25],
+    [0, 20, 25, 35]
+]
 
-'''Create receiver and add it to the manager'''
-receiver_address = 'B'
-receiver = RTPAplication(receiver_address)
-manager.add_node(receiver)
+for i in range(0, 0):
+    version = str(i)
+    SIM_TIME = 1000
+    env = simpy.Environment()
+    manager = Manager(network_coef[i-10])
 
-sender.add_dest_address(receiver.address)
-sender.connect(manager)
-receiver.connect(manager)
-sender.network.load_lambda_outs("\log_thesis_udp_" + version +".txt")
-sender.start(env)
+    '''Create sender and add it to the manager'''
+    sender_address = 'A'
+    sender = RTPAplication(sender_address)
+    Gcc_controller = GccController(sender.current_bandwidth, sender.RTP_packets_num)
+    UDP_controller = NonsenseCongestionController(sender.current_bandwidth, sender.RTP_packets_num)
+    sender.congestion_controller = Gcc_controller
+    manager.add_node(sender)
 
-env.run(SIM_TIME)
-log_data()
+    '''Create receiver and add it to the manager'''
+    receiver_address = 'B'
+    receiver = RTPAplication(receiver_address)
+    manager.add_node(receiver)
+
+    sender.add_dest_address(receiver.address)
+    sender.connect(manager)
+    receiver.connect(manager)
+
+    sender.network.load_lambda_outs("\log_thesis_udp_" + version +".txt")
+    sender.start(env)
+    env.run(SIM_TIME)
+    log_data()

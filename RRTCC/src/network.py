@@ -5,7 +5,7 @@ import json
 '''=========================================================================='''
 
 class Network:
-    def __init__(self, manager):
+    def __init__(self, manager, available_bandwidth_coef):
         self.manager = manager
         self.NORMAL_LOSS_THRESHOLD = 0.01
         self.NETWORK_NOISE_MEAN = 0.01
@@ -13,10 +13,12 @@ class Network:
         self.loss_threshold = self.NORMAL_LOSS_THRESHOLD
         self.RTP_packet_size = 1200 * 30 * 8  # bits
 
-        self.available_bandwidth_coef = [0, 5, 10, 15]
+        #self.available_bandwidth_coef = [0, 5, 10, 15]
         #self.available_bandwidth_coef = [0, 10, 15, 20]
         #self.available_bandwidth_coef = [0, 15, 20, 25]
         #self.available_bandwidth_coef = [0, 20, 25, 35]
+        #self.available_bandwidth_coef = [0, 40, 50, 75]
+        self.available_bandwidth_coef = available_bandwidth_coef
 
         self.lambda_outs = [self.RTP_packet_size * i for i in self.available_bandwidth_coef]
         self.lambda_outs_indexes = []

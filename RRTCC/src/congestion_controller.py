@@ -20,6 +20,10 @@ class CongestionController(object):
         self.db_controller = DelayBasedController(initial_bandwidth)
         self.d = [0 for i in range(0, max_num_packets)]
         self.m = [0 for i in range(0, max_num_packets)]
+        #self.maximum_sending_rate = 70 * 1200 * 30 * 8
+        #self.minimum_sending_rate = 35 * 1200 * 30 * 8
+        self.maximum_sending_rate = 10000000
+        self.minimum_sending_rate = 3000000
 
 
     @abstractmethod
@@ -87,8 +91,8 @@ class GccController(CongestionController):
         Ar = self.db_controller.estimate_bandwidth(env, RTCP_packet.timestamp, self.packets_info, self.m, self.last_reported_pk, RTCP_limit, RTP_packet_size)
         print 'As:' + str(As) + ' Ar:' + str(Ar)
         current_bandwidth = As if As < Ar else Ar
-        current_bandwidth = 3000000 if current_bandwidth < 3000000 else current_bandwidth
-        current_bandwidth = 10000000 if current_bandwidth > 10000000 else current_bandwidth
+        current_bandwidth = self.minimum_sending_rate if current_bandwidth < self.minimum_sending_rate else current_bandwidth
+        current_bandwidth = self.maximum_sending_rate if current_bandwidth > self.maximum_sending_rate else current_bandwidth
         self.A_arr.append((current_bandwidth, env.now))
         self.lb_controller.As_arr[-1] = current_bandwidth #bounded As
         RTP_sending_rate = current_bandwidth * self.rate_bandwidth_relation
