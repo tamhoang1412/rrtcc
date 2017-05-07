@@ -16,8 +16,8 @@ class RTPAplication:
         self.RTP_packet_size = 1200 * 30 * 8 # bits ~ 3600 bytes
         self.initial_RTP_interval = 0.04
         self.RTP_interval = self.initial_RTP_interval # 1 packet per RTP_interval
-        self.RTP_sending_rate = self.RTP_packet_size  / self.RTP_interval # bit/s
-        self.current_bandwidth = self.RTP_packet_size / self.RTP_interval # bit/s (initial estimated bandwidth)S
+        self.RTP_sending_rate = self.RTP_packet_size  / float(self.RTP_interval) # bit/s
+        self.current_bandwidth = self.RTP_packet_size / float(self.RTP_interval) # bit/s (initial estimated bandwidth)S
         self.last_RTCP_sent_time = 0
         self.last_pk_reported = 0
         self.RTCP_interval = 3
@@ -139,8 +139,9 @@ class RTPAplication:
                 if self.in_RTP_session:
                     self.congestion_controller.update_packets_info(packet)
                     self.RTP_sending_rate, self.current_bandwidth = self.congestion_controller.adjust_RTP_sending_rate(env, packet, self.RTCP_limit, self.RTP_packet_size, self.RTP_interval, self.last_sent_RTP)
+                    self.RTP_interval = 1 / float(self.RTP_sending_rate / float(self.RTP_packet_size))
                     print ("RTP sending rate " + str(self.RTP_sending_rate))
-                    self.RTP_interval = 1 / (self.RTP_sending_rate / self.RTP_packet_size)
+                    print ("RTP interval ") + str(self.RTP_interval)
                     self.network.lambda_in = self.RTP_sending_rate
                     return
                 else:
@@ -149,8 +150,9 @@ class RTPAplication:
                 if self.in_RTP_session:
                     self.congestion_controller.update_packets_info(packet)
                     self.RTP_sending_rate, self.current_bandwidth = self.congestion_controller.adjust_RTP_sending_rate(env, packet, self.RTCP_limit, self.RTP_packet_size, self.RTP_interval, self.last_sent_RTP)
+                    self.RTP_interval = 1 / float(self.RTP_sending_rate / float(self.RTP_packet_size))
                     print ("RTP sending rate " + str(self.RTP_sending_rate))
-                    self.RTP_interval = 1 / (self.RTP_sending_rate / self.RTP_packet_size)
+                    print ("RTP interval ") + str(self.RTP_interval)
                     self.network.lambda_in = self.RTP_sending_rate
                     return
                 else:
@@ -163,7 +165,6 @@ class RTPAplication:
                         print err
             self.network.lambda_in = self.RTP_sending_rate
         return
-
 
 
 '''=========================================================================='''
